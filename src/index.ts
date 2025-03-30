@@ -55,11 +55,12 @@ server.tool(
         ],
       };
     } catch (error) {
+const errorMessage = error instanceof Error ? error.message : 'error without message';
       return {
         content: [
           {
             type: "text",
-            text: `Error: ${error.message}`,
+            text: `Error: ${errorMessage}`,
           },
         ],
       };
