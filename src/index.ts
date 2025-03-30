@@ -48,7 +48,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `The miner of block ${blockNumber} is: ${block.miner}`,
+            text: `The miner of block ${blockNumber} is: ${block?.miner}`,
           },
         ],
       };
