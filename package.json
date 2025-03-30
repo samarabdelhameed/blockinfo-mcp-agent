@@ -2,6 +2,12 @@
   "name": "blockinfo-mcp-agent",
   "version": "1.0.0",
   "type": "module",
+  "bin": {
+    "blockinfo-mcp-agent": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
   "description": "",
   "main": "index.js",
   "scripts": {
