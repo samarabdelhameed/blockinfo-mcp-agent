@@ -1,7 +1,13 @@
 {
-  "name": "blockinfo-mcp-agent",
-  "version": "1.0.0",
+  "name": "blockhigh",
+  "version": "0.0.1",
   "type": "module",
+  "bin": {
+    "blockhigh": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
   "description": "",
   "main": "index.js",
   "scripts": {

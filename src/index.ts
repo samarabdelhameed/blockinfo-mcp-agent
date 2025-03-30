@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ethers } from "ethers";
@@ -11,8 +13,8 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const provider = new ethers.JsonRpcProvider(`https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`);
 
 const server = new McpServer({
-  name: "BlockInfo MCP Agent",
-  version: "1.0.0",
+  name: "Ethereum Block High",
+  version: "0.0.1",
 });
 
 server.tool("getCurrentBlock", {}, async () => {
@@ -48,7 +50,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `The miner of block ${blockNumber} is: ${block.miner}`,
+            text: `The miner of block ${blockNumber} is: ${block?.miner}`,
           },
         ],
       };
