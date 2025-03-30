@@ -2,10 +2,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
+import { z } from "zod";
 
 dotenv.config();
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const provider = new ethers.JsonRpcProvider(`https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`);
 
 const server = new McpServer({
@@ -13,39 +15,35 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-server.tool(
-  "getCurrentBlock",
-  {},
-  async () => {
-    try {
-      const blockNumber = await provider.getBlockNumber();
-      return {
-        content: [
-          {
-            type: "text",
-            text: `The current block number is: ${blockNumber}`,
-          },
-        ],
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${error.message}`,
-          },
-        ],
-      };
-    }
+server.tool("getCurrentBlock", {}, async () => {
+  try {
+    const blockNumber = await provider.getBlockNumber();
+    return {
+      content: [
+        {
+          type: "text",
+          text: `The current block number is: ${blockNumber}`,
+        },
+      ],
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+      ],
+    };
   }
-);
+});
 
 server.tool(
   "getBlockMiner",
-  { blockNumber: "number" },
+  { blockNumber: z.string() },
   async ({ blockNumber }) => {
     try {
-      const block = await provider.getBlock(blockNumber);
+      const block = await provider.getBlock(Number(blockNumber));
       return {
         content: [
           {
@@ -55,12 +53,11 @@ server.tool(
         ],
       };
     } catch (error) {
-const errorMessage = error instanceof Error ? error.message : 'error without message';
       return {
         content: [
           {
             type: "text",
-            text: `Error: ${errorMessage}`,
+            text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
           },
         ],
       };
@@ -68,53 +65,53 @@ const errorMessage = error instanceof Error ? error.message : 'error without mes
   }
 );
 
-server.tool(
-  "getGasPrice",
-  {},
-  async () => {
-    try {
-      const gasPrice = await provider.getGasPrice();
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Current gas price: ${ethers.formatUnits(gasPrice, "gwei")} Gwei`,
-          },
-        ],
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${error.message}`,
-          },
-        ],
-      };
-    }
+// ✅ Updated to use provider.send instead of .getGasPrice()
+server.tool("getGasPrice", {}, async () => {
+  try {
+    const gasPriceHex = await provider.send("eth_gasPrice", []);
+    const gasPrice = BigInt(gasPriceHex);
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Current gas price: ${ethers.formatUnits(gasPrice, "gwei")} Gwei`,
+        },
+      ],
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+      ],
+    };
   }
-);
+});
 
 server.tool(
   "getTransactionDetails",
-  { txHash: "string" },
+  { txHash: z.string() },
   async ({ txHash }) => {
     try {
       const tx = await provider.getTransaction(txHash);
-      if (!tx) return {
-        content: [
-          {
-            type: "text",
-            text: `Transaction not found for hash: ${txHash}`,
-          },
-        ],
-      };
+      if (!tx) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Transaction not found for hash: ${txHash}`,
+            },
+          ],
+        };
+      }
 
       return {
         content: [
           {
             type: "text",
-            text: `Transaction details:\nFrom: ${tx.from}\nTo: ${tx.to}\nValue: ${ethers.formatEther(tx.value)} ETH\nGas Fee: ${ethers.formatUnits(tx.gasPrice * tx.gasLimit, "gwei")} Gwei`,
+            text: `Transaction details:\nFrom: ${tx.from}\nTo: ${tx.to}\nValue: ${ethers.formatEther(tx.value)} ETH\nGas Price: ${ethers.formatUnits(tx.gasPrice!, "gwei")} Gwei`,
           },
         ],
       };
@@ -123,7 +120,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `Error: ${error.message}`,
+            text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
           },
         ],
       };
@@ -133,10 +130,9 @@ server.tool(
 
 server.tool(
   "getTransactionStatus",
-  { txHash: "string" },
+  { txHash: z.string() },
   async ({ txHash }) => {
     try {
-      const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
       const response = await fetch(
         `https://api.etherscan.io/api?module=transaction&action=gettxreceiptstatus&txhash=${txHash}&apikey=${ETHERSCAN_API_KEY}`
       );
@@ -167,7 +163,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `Error: ${error.message}`,
+            text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
           },
         ],
       };
